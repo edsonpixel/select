@@ -1,80 +1,54 @@
 <script>
-  
-  import { getContext } from "svelte"	
-  import '@fullcalendar/core/locales-all'
-  import FullCalendar from 'svelte-fullcalendar';
-  import daygridPlugin from '@fullcalendar/daygrid';
-  import listPlugin from '@fullcalendar/list';
+  import { getContext } from "svelte";
+  import Select from 'svelte-select';
   import { onMount } from "svelte";
-  import {langs, codeLang} from "./lang"
- 
-  export let language
-  export let calendarEvent
-  
-  export let mappingTitle
-  export let mappingDate
- 
-  export let mappingTitle2
-  export let mappingDate2
 
+  const { styleable } = getContext("sdk"); 
+  const component = getContext("component");
+
+  export let multiple;
   export let dataProvider
-  export let dataProvider2
+  export let label
+  export let disable
+  export let selectEvent
+  export let placeholder 
+  export let required
+  export let placeholderAlwaysShow
 
-  export let mappingColor
-  export let mappingColor2
+  let items = []
 
-  export let allday
-  export let allday2
-  
-  let eventsList = []
+  async function fetchData() {
+    try {
+      const response = dataProvider;
+      
+      items = response?.rows?.map((item, index)=>{
+        return {
+          value: item[label],
+          label: item[label],
+          item: item 
+        }
+      })
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
   onMount(()=>{
-    
-    if(eventsList.length > 0){
-      eventsList = []
-    }
-    if(dataProvider.rows){
-      dataProvider.rows.forEach(event => {
-        let eventColor = mappingColor ?? '#313131'           
-        eventsList.push({ title: event[mappingTitle], date: event[mappingDate], color: eventColor, event: event, allDay: allday   })        
-      });
-    }
-    if(dataProvider2.rows){
-      dataProvider2.rows.forEach(event => {
-        let eventColor2 = mappingColor2 ?? '#eb4034' 
-        eventsList.push({ title: event[mappingTitle2], date: event[mappingDate2], color: eventColor2, event: event, allDay: allday2  })
-      });
-    }
-    eventsList = eventsList
+    fetchData()
   })
 
-  let options  = {
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,dayGridWeek,dayGridDay'
-    },
-    plugins: [daygridPlugin, listPlugin],
-    initialDate:  Date.now(),
-    locale: language,
-    dayMaxEvents: true,
-    eventClick: (event)=>{
-      calendarEvent({
-        value: event.event
-      })
-      console.log(JSON.parse(text))
-      console.log(event.event.title)
-    },
-    events:eventsList,
-    eventColor: '#378006',
-    theme: true,
-    ...langs[codeLang(language)]
+  async function handleSelectChange(event) {
+    
+    const selectedValue = event.detail
+    const dataSend = JSON.parse(JSON.stringify(selectedValue?.item))
+    
+    await selectEvent({
+      data: dataSend
+    })
   }
-  const { styleable } = getContext("sdk") 
-  const component = getContext("component")
 
 </script>
 
 <div use:styleable={$component.styles}>
-  <FullCalendar {options} />
+  <Select disabled={disable} placeholderAlwaysShow={placeholderAlwaysShow} required={required} {items} placeholder={placeholder} multiple={multiple} class="foo bar" on:change={handleSelectChange} />
 </div>
-
